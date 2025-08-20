@@ -1,0 +1,37 @@
+package com.example.codeeditor
+
+import android.content.Context
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+
+fun compileCode(
+    context: Context,
+    code: String,
+    fileManager: FileManager,
+    fileName: String,
+    onResult: (String) -> Unit
+) {
+    // 1. Save the Kotlin file internally
+    fileManager.saveFile(fileName, code)
+    val localPath = "${context.filesDir.absolutePath}/$fileName"
+
+    // 2. Show instructions via onResult
+    val instructions = "Kotlin file saved at $localPath "
+
+//          On your PC, do the following manually:
+
+//        1. Push the file to the device:
+//           adb push $localPath /sdcard/$fileName
+//        2. Compile it using your script:
+//           ./compile_kotlin.sh /sdcard/$fileName
+//        3. Pull the result back to your PC:
+//           adb pull /sdcard/compile_result.txt /path/to/local/folder/
+
+
+
+    onResult(instructions)
+}

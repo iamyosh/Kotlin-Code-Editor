@@ -1,0 +1,313 @@
+package com.example.codeeditor
+
+import android.os.Bundle
+import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.codeeditor.ui.theme.CodeEditorTheme
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3Api::class)
+class MainActivity : ComponentActivity() {
+    private lateinit var fileManager: FileManager
+    private var currentFileName by mutableStateOf("Untitled")
+    private val editorState = TextEditorState()
+
+
+    override fun onPause() {
+        super.onPause()
+        saveFile(currentFileName)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            val clipboardManager = LocalClipboardManager.current
+            val syntaxRules = loadSyntaxRules(this, "python.json")
+            var showMiniToolbar by remember { mutableStateOf(false) }
+            var showFindReplace by remember { mutableStateOf(false) }
+            var showCompilerInterface by remember { mutableStateOf(false) }
+            val drawerState = rememberDrawerState(DrawerValue.Closed)
+            var compileOutput by remember { mutableStateOf("") }
+            val scope = rememberCoroutineScope()
+            val context = LocalContext.current
+
+
+            fileManager = FileManager(context)
+            CodeEditorTheme {
+                ModalNavigationDrawer(
+                    drawerState = drawerState,
+                    drawerContent = { DrawerContent(
+                        initialFileName = currentFileName,
+                        context = this,
+                        onNewFile = { createNewFile(it) },
+                        onOpenFile = { openFile(it) },
+                        onSaveFile = {saveFile(it)}
+                    )
+                    }
+                ) {
+
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        topBar = {
+                            TopAppBar(
+                                title = { Text(text = "Code Editor $currentFileName") },
+                                navigationIcon = {
+                                    IconButton(onClick = {
+                                        scope.launch { drawerState.open() }
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Menu,
+                                            contentDescription = "Menu Bar"
+                                        )
+                                    }
+                                },
+                                actions = {
+                                    IconButton(onClick = { showMiniToolbar = !showMiniToolbar }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Editing Option"
+                                        )
+                                    }
+                                }
+                            )
+                        },
+
+                        bottomBar = {
+                            BottomAppBar(
+                                actions = {
+                                    IconButton(onClick = { editorState.undo() }) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.undo),
+                                            contentDescription = "Undo"
+                                        )
+                                    }
+                                    IconButton(onClick = { editorState.redo() }) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.redo),
+                                            contentDescription = "redo"
+                                        )
+                                    }
+                                    IconButton(onClick ={ showFindReplace = !showFindReplace }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Search,
+                                            contentDescription = "Find"
+                                        )
+                                    }
+                                    IconButton(onClick ={
+                                        compileCode(context,editorState.textField.value.text,fileManager,currentFileName) { output ->
+                                            compileOutput = output
+                                            showCompilerInterface = true
+                                        }
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Default.AccountBox,
+                                            contentDescription = "Find"
+                                        )
+                                    }
+                                }
+                            )
+                        }
+
+                    ) { innerPadding ->
+                        Column (modifier = Modifier.padding(innerPadding)){
+
+                            if(showCompilerInterface){
+                                CompilerInterface(clipboardManager,compileOutput, onClose = {showCompilerInterface =false})
+                            }
+
+                            if (showFindReplace) {
+                                FindReplaceBar(editorState = editorState, onClose = {
+                                    showFindReplace = false
+                                })
+                            }
+
+                            if (showMiniToolbar) {
+                                MiniToolbar(
+                                    onCut = { cutText(editorState.textField.value, { editorState.onTextChange(it) }, clipboardManager) },
+                                    onCopy = { copyText(editorState.textField.value, clipboardManager) },
+                                    onPaste = { pasteText(editorState.textField.value, { editorState.onTextChange(it) }, clipboardManager) }
+                                )
+                            }
+
+
+                            CodeEditor(
+                                modifier = Modifier.weight(1f),
+                                editorState = editorState,
+                                syntaxRules = syntaxRules
+                            )
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+    private fun createNewFile(filename: String) {
+        val file = fileManager.createNewFile(filename)
+        currentFileName = file
+        editorState.textField.value = TextFieldValue("")
+    }
+
+    private fun saveFile(filename: String ) {
+        fileManager.saveFile(filename, editorState.textField.value.text)
+    }
+
+    private fun openFile(filename: String) {
+        val content = fileManager.openFile(filename)
+        editorState.textField.value = TextFieldValue(content)
+        currentFileName = filename
+    }
+}
+
+@Composable
+fun CodeEditor(
+    modifier: Modifier,
+    editorState: TextEditorState,
+    syntaxRules: SyntaxRules
+) {
+    val editorText = editorState.textField.value
+    val scrollState = rememberScrollState()
+    val lines = editorText.text.split("\n").ifEmpty { listOf("") }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .verticalScroll(scrollState)
+            .padding(8.dp)
+    ) {
+        Row {
+            Column(modifier = Modifier.width(50.dp).padding(end = 4.dp)) {
+                lines.forEachIndexed { i, _ ->
+                    Text(
+                        text = "${i + 1}.",
+                        style = TextStyle(fontSize = 16.sp, color = Color.DarkGray),
+                        modifier = Modifier
+                            .height(24.dp)
+                            .padding(vertical = 2.dp)
+                            .background(Color.LightGray)
+                    )
+                }
+            }
+            BasicTextField(
+                value = editorText,
+                onValueChange = { editorState.onTextChange(it) },
+                textStyle = TextStyle(fontSize = 16.sp,color = Color.Transparent, lineHeight = 24.sp),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                decorationBox = { innerTextField ->
+                    Box {
+                        androidx.compose.material3.Text(
+                            text = highlightSyntax(editorText.text, syntaxRules),
+                            style = TextStyle(fontSize = 16.sp, lineHeight = 24.sp)
+                        )
+
+                        Log.d("FileManager", " to ${highlightSyntax(editorText.text, syntaxRules)}")
+                        if (editorText.text.isEmpty()) {
+                            Text("Type here...", color = Color.Gray, lineHeight = 24.sp)
+                        }
+                        innerTextField()
+                    }
+                }
+            )
+        }
+    }
+
+    LaunchedEffect(editorText) {
+        snapshotFlow { editorText }
+            .debounce(500)
+            .collect { editorState.commitChange() }
+    }
+}
+
+fun highlightSyntax(text: String, rules: SyntaxRules): AnnotatedString {
+    return buildAnnotatedString {
+        append(text)
+
+        // 🔹 Keywords (blue)
+        rules.keywords.forEach { keyword ->
+            "\\b$keyword\\b".toRegex().findAll(text).forEach { match ->
+                addStyle(
+                    SpanStyle(color = Color(0xFF569CD6)),
+                    match.range.first,
+                    match.range.last + 1
+                )
+            }
+        }
+
+        // 🔹 Comments (green)
+        rules.comments.forEach { comment ->
+            Regex("${Regex.escape(comment)}.*").findAll(text).forEach { match ->
+                addStyle(
+                    SpanStyle(color = Color(0xFF6A9955)),
+                    match.range.first,
+                    match.range.last + 1
+                )
+            }
+        }
+
+        // 🔹 Strings (orange)
+        val stringRegex = Regex("\".*?\"|'.*?'")
+        stringRegex.findAll(text).forEach { match ->
+            addStyle(
+                SpanStyle(color = Color(0xFFD69D85)),
+                match.range.first,
+                match.range.last + 1
+            )
+        }
+    }
+}
+
+
