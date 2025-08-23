@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+// Composable drawer UI with options to create, open, and save files
 @Composable
 fun DrawerContent(
     initialFileName: String,
@@ -69,6 +70,7 @@ fun DrawerContent(
         }
     }
 
+    // Show "New File" dialog
     if (showDialog.value) {
 
         var expanded = remember { mutableStateOf(false) }
@@ -128,7 +130,7 @@ fun DrawerContent(
         )
     }
 
-
+    // Show "Save File" dialog
     if (showSaveDialog.value) {
 
 
@@ -158,7 +160,7 @@ fun DrawerContent(
 
         )
     }
-
+    // Show "Open File" dialog
     if (showOpenDialog.value) {
         val files = context.filesDir.listFiles()?.toList() ?: emptyList()
         AlertDialog(

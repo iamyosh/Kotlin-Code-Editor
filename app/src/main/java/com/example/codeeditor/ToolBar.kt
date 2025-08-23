@@ -13,7 +13,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-
+/**
+ * MiniToolbar Composable
+ *
+ * A simple toolbar UI that provides buttons for text editing actions:
+ * - Cut
+ * - Copy
+ * - Paste
+ *
+ * The actual behavior is passed in through the callbacks [onCut], [onCopy], and [onPaste].
+ */
 @Composable
 fun MiniToolbar(
     onCut: () -> Unit,

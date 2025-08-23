@@ -14,6 +14,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+
+
+/**
+ * FindReplaceBar Composable
+ *
+ * A dialog UI that allows the user to:
+ * - Enter a search term (Find).
+ * - Enter replacement text.
+ * - Replace the first occurrence or all occurrences in the editor.
+ *
+ * Uses [TextEditorState] for performing replace operations.
+ * [onClose] is called when the dialog is dismissed or after an action.
+ */
+
 @Composable
 fun FindReplaceBar(
     editorState: TextEditorState,

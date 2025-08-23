@@ -55,9 +55,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.codeeditor.ui.theme.CodeEditorTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 
+
+// MainActivity: Hosts the code editor UI and handles file operations
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
     private lateinit var fileManager: FileManager
@@ -69,6 +72,8 @@ class MainActivity : ComponentActivity() {
         super.onPause()
         saveFile(currentFileName)
     }
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,6 +89,17 @@ class MainActivity : ComponentActivity() {
             val scope = rememberCoroutineScope()
             val context = LocalContext.current
 
+            // Auto-save and commit changes
+            LaunchedEffect(editorState.textField.value) {
+                snapshotFlow { editorState.textField.value }
+                    .debounce(500)
+                    .collect {
+                        editorState.commitChange()
+                        saveFile(currentFileName)
+                    }
+            }
+
+
 
             fileManager = FileManager(context)
             CodeEditorTheme {
@@ -98,6 +114,8 @@ class MainActivity : ComponentActivity() {
                     )
                     }
                 ) {
+
+// Scaffold: Provides the basic layout structure with top bar, bottom bar, and main content area
 
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
@@ -162,6 +180,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                     ) { innerPadding ->
+                        // Main content goes here
                         Column (modifier = Modifier.padding(innerPadding)){
 
                             if(showCompilerInterface){
@@ -195,23 +214,32 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    // Create a new file and clear the editor (This function takes lambda callbacks for New, Open, and Save actions in DrawerContent)
     private fun createNewFile(filename: String) {
         val file = fileManager.createNewFile(filename)
         currentFileName = file
         editorState.textField.value = TextFieldValue("")
     }
 
+    // Save current editor content to a file (This function takes lambda callbacks for New, Open, and Save actions in DrawerContent)
     private fun saveFile(filename: String ) {
         fileManager.saveFile(filename, editorState.textField.value.text)
     }
+
+    // Open a file and load its content into the editor (This function takes lambda callbacks for New, Open, and Save actions in DrawerContent)
 
     private fun openFile(filename: String) {
         val content = fileManager.openFile(filename)
         editorState.textField.value = TextFieldValue(content)
         currentFileName = filename
     }
+
+
 }
 
+
+// CodeEditor Composable: Displays editable text with line numbers and syntax highlighting
 @Composable
 fun CodeEditor(
     modifier: Modifier,
@@ -230,7 +258,9 @@ fun CodeEditor(
             .padding(8.dp)
     ) {
         Row {
-            Column(modifier = Modifier.width(50.dp).padding(end = 4.dp)) {
+            Column(modifier = Modifier
+                .width(50.dp)
+                .padding(end = 4.dp)) {
                 lines.forEachIndexed { i, _ ->
                     Text(
                         text = "${i + 1}.",
@@ -246,7 +276,9 @@ fun CodeEditor(
                 value = editorText,
                 onValueChange = { editorState.onTextChange(it) },
                 textStyle = TextStyle(fontSize = 16.sp,color = Color.Transparent, lineHeight = 24.sp),
-                modifier = Modifier.weight(1f).fillMaxHeight(),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
                 decorationBox = { innerTextField ->
                     Box {
                         androidx.compose.material3.Text(
@@ -265,13 +297,10 @@ fun CodeEditor(
         }
     }
 
-    LaunchedEffect(editorText) {
-        snapshotFlow { editorText }
-            .debounce(500)
-            .collect { editorState.commitChange() }
-    }
+
 }
 
+//Highlight text syntax based on given rules (keywords, comments, strings)
 fun highlightSyntax(text: String, rules: SyntaxRules): AnnotatedString {
     return buildAnnotatedString {
         append(text)
