@@ -6,14 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -22,58 +15,39 @@ import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDrawerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.codeeditor.ui.theme.CodeEditorTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.res.colorResource
 
 
-// MainActivity: Hosts the code editor UI and handles file operations
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
     private lateinit var fileManager: FileManager
     private var currentFileName by mutableStateOf("Untitled")
     private val editorState = TextEditorState()
 
-
     override fun onPause() {
         super.onPause()
         saveFile(currentFileName)
     }
-
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -99,36 +73,38 @@ class MainActivity : ComponentActivity() {
                     }
             }
 
-
-
             fileManager = FileManager(context)
+
             CodeEditorTheme {
                 ModalNavigationDrawer(
                     drawerState = drawerState,
-                    drawerContent = { DrawerContent(
-                        initialFileName = currentFileName,
-                        context = this,
-                        onNewFile = { createNewFile(it) },
-                        onOpenFile = { openFile(it) },
-                        onSaveFile = {saveFile(it)}
-                    )
+                    drawerContent = {
+                        DrawerContent(
+                            initialFileName = currentFileName,
+                            context = this,
+                            onNewFile = { createNewFile(it) },
+                            onOpenFile = { openFile(it) },
+                            onSaveFile = { saveFile(it) }
+                        )
                     }
                 ) {
-
-// Scaffold: Provides the basic layout structure with top bar, bottom bar, and main content area
-
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
                         topBar = {
                             TopAppBar(
-                                title = { Text(text = "Code Editor $currentFileName") },
+                                title = {
+                                    Text(
+                                        text = "MAD Code Editor $currentFileName",
+                                        color = colorResource(id = R.color.text_primary),
+                                        fontSize = 20.sp
+                                    )
+                                },
                                 navigationIcon = {
-                                    IconButton(onClick = {
-                                        scope.launch { drawerState.open() }
-                                    }) {
+                                    IconButton(onClick = { scope.launch { drawerState.open() } }) {
                                         Icon(
                                             imageVector = Icons.Default.Menu,
-                                            contentDescription = "Menu Bar"
+                                            contentDescription = "Menu",
+                                            tint = colorResource(id = R.color.text_primary)
                                         )
                                     }
                                 },
@@ -136,43 +112,59 @@ class MainActivity : ComponentActivity() {
                                     IconButton(onClick = { showMiniToolbar = !showMiniToolbar }) {
                                         Icon(
                                             imageVector = Icons.Default.Edit,
-                                            contentDescription = "Editing Option"
+                                            contentDescription = "Edit",
+                                            tint = colorResource(id = R.color.secondary)
                                         )
                                     }
-                                }
+                                },
+                                colors = TopAppBarDefaults.smallTopAppBarColors(
+                                    containerColor = colorResource(id = R.color.primary),
+                                    titleContentColor = colorResource(id = R.color.text_primary),
+                                    actionIconContentColor = colorResource(id = R.color.secondary)
+                                )
                             )
                         },
 
                         bottomBar = {
                             BottomAppBar(
+                                containerColor = colorResource(id = R.color.primary_variant),
                                 actions = {
                                     IconButton(onClick = { editorState.undo() }) {
                                         Icon(
                                             painter = painterResource(id = R.drawable.undo),
-                                            contentDescription = "Undo"
+                                            contentDescription = "Undo",
+                                            tint = colorResource(id = R.color.text_primary)
                                         )
                                     }
                                     IconButton(onClick = { editorState.redo() }) {
                                         Icon(
                                             painter = painterResource(id = R.drawable.redo),
-                                            contentDescription = "redo"
+                                            contentDescription = "Redo",
+                                            tint = colorResource(id = R.color.text_primary)
                                         )
                                     }
-                                    IconButton(onClick ={ showFindReplace = !showFindReplace }) {
+                                    IconButton(onClick = { showFindReplace = !showFindReplace }) {
                                         Icon(
                                             imageVector = Icons.Default.Search,
-                                            contentDescription = "Find"
+                                            contentDescription = "Find",
+                                            tint = colorResource(id = R.color.secondary)
                                         )
                                     }
-                                    IconButton(onClick ={
-                                        compileCode(context,editorState.textField.value.text,fileManager,currentFileName) { output ->
+                                    IconButton(onClick = {
+                                        compileCode(
+                                            context,
+                                            editorState.textField.value.text,
+                                            fileManager,
+                                            currentFileName
+                                        ) { output ->
                                             compileOutput = output
                                             showCompilerInterface = true
                                         }
                                     }) {
                                         Icon(
                                             imageVector = Icons.Default.AccountBox,
-                                            contentDescription = "Find"
+                                            contentDescription = "Compile",
+                                            tint = colorResource(id = R.color.secondary)
                                         )
                                     }
                                 }
@@ -180,11 +172,14 @@ class MainActivity : ComponentActivity() {
                         }
 
                     ) { innerPadding ->
-                        // Main content goes here
-                        Column (modifier = Modifier.padding(innerPadding)){
+                        Column(modifier = Modifier.padding(innerPadding)) {
 
-                            if(showCompilerInterface){
-                                CompilerInterface(clipboardManager,compileOutput, onClose = {showCompilerInterface =false})
+                            if (showCompilerInterface) {
+                                CompilerInterface(
+                                    clipboardManager,
+                                    compileOutput,
+                                    onClose = { showCompilerInterface = false }
+                                )
                             }
 
                             if (showFindReplace) {
@@ -201,13 +196,11 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-
                             CodeEditor(
                                 modifier = Modifier.weight(1f),
                                 editorState = editorState,
                                 syntaxRules = syntaxRules
                             )
-
                         }
                     }
                 }
@@ -215,128 +208,155 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Create a new file and clear the editor (This function takes lambda callbacks for New, Open, and Save actions in DrawerContent)
     private fun createNewFile(filename: String) {
         val file = fileManager.createNewFile(filename)
         currentFileName = file
         editorState.textField.value = TextFieldValue("")
     }
 
-    // Save current editor content to a file (This function takes lambda callbacks for New, Open, and Save actions in DrawerContent)
-    private fun saveFile(filename: String ) {
+    private fun saveFile(filename: String) {
         fileManager.saveFile(filename, editorState.textField.value.text)
     }
-
-    // Open a file and load its content into the editor (This function takes lambda callbacks for New, Open, and Save actions in DrawerContent)
 
     private fun openFile(filename: String) {
         val content = fileManager.openFile(filename)
         editorState.textField.value = TextFieldValue(content)
         currentFileName = filename
     }
-
-
 }
 
 
-// CodeEditor Composable: Displays editable text with line numbers and syntax highlighting
+// CodeEditor Composable with line numbers, scrolling, and syntax highlighting
 @Composable
 fun CodeEditor(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     editorState: TextEditorState,
     syntaxRules: SyntaxRules
 ) {
-    val editorText = editorState.textField.value
     val scrollState = rememberScrollState()
+    val editorText = editorState.textField.value
     val lines = editorText.text.split("\n").ifEmpty { listOf("") }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(colorResource(id = R.color.background))
             .verticalScroll(scrollState)
             .padding(8.dp)
     ) {
         Row {
-            Column(modifier = Modifier
-                .width(50.dp)
-                .padding(end = 4.dp)) {
+            // Line numbers
+            Column(
+                modifier = Modifier
+                    .width(50.dp)
+                    .padding(end = 4.dp)
+            ) {
                 lines.forEachIndexed { i, _ ->
                     Text(
                         text = "${i + 1}.",
-                        style = TextStyle(fontSize = 16.sp, color = Color.DarkGray),
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                            color = colorResource(id = R.color.text_secondary)
+                        ),
                         modifier = Modifier
                             .height(24.dp)
                             .padding(vertical = 2.dp)
-                            .background(Color.LightGray)
                     )
                 }
             }
+
+            // Editor area
             BasicTextField(
                 value = editorText,
                 onValueChange = { editorState.onTextChange(it) },
-                textStyle = TextStyle(fontSize = 16.sp,color = Color.Transparent, lineHeight = 24.sp),
+                textStyle = TextStyle(
+                    fontSize = 16.sp,
+                    color = Color.Transparent, // hide default text
+                    lineHeight = 24.sp
+                ),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
                 decorationBox = { innerTextField ->
                     Box {
-                        androidx.compose.material3.Text(
+                        // Highlighted text
+                        Text(
                             text = highlightSyntax(editorText.text, syntaxRules),
-                            style = TextStyle(fontSize = 16.sp, lineHeight = 24.sp)
+                            style = TextStyle(
+                                fontSize = 16.sp,
+                                lineHeight = 24.sp
+                            )
                         )
 
-                        Log.d("FileManager", " to ${highlightSyntax(editorText.text, syntaxRules)}")
+                        // Placeholder
                         if (editorText.text.isEmpty()) {
-                            Text("Type here...", color = Color.Gray, lineHeight = 24.sp)
+                            Text(
+                                "Type here...",
+                                color = colorResource(id = R.color.text_secondary),
+                                lineHeight = 24.sp
+                            )
                         }
-                        innerTextField()
+
+                        innerTextField() // draws cursor & input
                     }
                 }
             )
         }
     }
-
-
 }
 
-//Highlight text syntax based on given rules (keywords, comments, strings)
+
+// Syntax highlighting using XML colors
+@Composable
 fun highlightSyntax(text: String, rules: SyntaxRules): AnnotatedString {
+    val keywordColor = colorResource(id = R.color.syntax_keyword)
+    val commentColor = colorResource(id = R.color.syntax_comment)
+    val stringColor = colorResource(id = R.color.syntax_string)
+    val numberColor = colorResource(id = R.color.syntax_number)
+
     return buildAnnotatedString {
         append(text)
 
-        // 🔹 Keywords (blue)
+        // Keywords
         rules.keywords.forEach { keyword ->
-            "\\b$keyword\\b".toRegex().findAll(text).forEach { match ->
+            "\\b$keyword\\b".toRegex(RegexOption.MULTILINE).findAll(text).forEach { match ->
                 addStyle(
-                    SpanStyle(color = Color(0xFF569CD6)),
+                    SpanStyle(color = keywordColor),
                     match.range.first,
                     match.range.last + 1
                 )
             }
         }
 
-        // 🔹 Comments (green)
+        // Comments
         rules.comments.forEach { comment ->
-            Regex("${Regex.escape(comment)}.*").findAll(text).forEach { match ->
+            Regex("${Regex.escape(comment)}.*", RegexOption.MULTILINE).findAll(text).forEach { match ->
                 addStyle(
-                    SpanStyle(color = Color(0xFF6A9955)),
+                    SpanStyle(color = commentColor),
                     match.range.first,
                     match.range.last + 1
                 )
             }
         }
 
-        // 🔹 Strings (orange)
-        val stringRegex = Regex("\".*?\"|'.*?'")
+        // Strings
+        val stringRegex = Regex("\".*?\"|'.*?'", RegexOption.MULTILINE)
         stringRegex.findAll(text).forEach { match ->
             addStyle(
-                SpanStyle(color = Color(0xFFD69D85)),
+                SpanStyle(color = stringColor),
+                match.range.first,
+                match.range.last + 1
+            )
+        }
+
+        // Numbers
+        val numberRegex = "\\b\\d+\\b".toRegex()
+        numberRegex.findAll(text).forEach { match ->
+            addStyle(
+                SpanStyle(color = numberColor),
                 match.range.first,
                 match.range.last + 1
             )
         }
     }
 }
-
-
