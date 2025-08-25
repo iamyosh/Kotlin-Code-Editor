@@ -13,6 +13,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.codeeditor.ui.theme.BlackPrimary
+import com.example.codeeditor.ui.theme.LightPinkAccent
+import com.example.codeeditor.ui.theme.WhiteText
+import androidx.compose.material3.ButtonDefaults
+
 /**
  * MiniToolbar Composable
  *
@@ -29,17 +34,16 @@ fun MiniToolbar(
     onCopy: () -> Unit,
     onPaste: () -> Unit
 ) {
-    val editorState = remember { TextEditorState() }
     Log.d("FileManager", "Mini tool bar")
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.LightGray)
+            .background(BlackPrimary) // Themed background
             .padding(8.dp),
     ) {
-        TextButton(onClick = onCut) { Text("Cut") }
-        TextButton(onClick = onCopy) { Text("Copy") }
-        TextButton(onClick = onPaste) { Text("Paste") }
+        TextButton(onClick = onCut, colors = ButtonDefaults.textButtonColors(contentColor = LightPinkAccent)) { Text("Cut", color = WhiteText) }
+        TextButton(onClick = onCopy, colors = ButtonDefaults.textButtonColors(contentColor = LightPinkAccent)) { Text("Copy", color = WhiteText) }
+        TextButton(onClick = onPaste, colors = ButtonDefaults.textButtonColors(contentColor = LightPinkAccent)) { Text("Paste", color = WhiteText) }
     }
 }

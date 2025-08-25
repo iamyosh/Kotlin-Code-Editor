@@ -1,0 +1,36 @@
+{
+  "keywords": [
+    "package", "import", "class", "interface", "object", "fun", "val", "var", "by", "for", "while", "do",
+    "if", "else", "when", "is", "in", "as", "typealias", "enum", "annotation", "data", "sealed",
+    "true", "false", "null", "this", "super", "return", "break", "continue", "throw", "try",
+    "catch", "finally", "public", "private", "protected", "internal", "expect", "actual",
+    "open", "abstract", "final", "override", "const", "lateinit", "init", "get", "set",
+    "field", "param", "delegate", "it"
+  ],
+  "comments": [
+    "//",
+    "/*",
+    "*/"
+  ],
+  "strings": [
+    "\\\"",
+    "'",
+    "\\\"\\\"\\\""
+  ],
+  "numbers": [
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+    "0b", "0x", "0X", "L", "f", "F"
+  ],
+  "operators": [
+    "+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">=", "&&", "||", "!", "is", "!is",
+    "as", "?", ":", "::", "->", "=", "+=", "-=", "*=", "/=", "%="
+  ],
+  "types": [
+    "Any", "Unit", "Nothing", "Boolean", "Byte", "Short", "Int", "Long", "Float", "Double",
+    "Char", "String", "Array", "List", "Set", "Map", "MutableList", "MutableSet", "MutableMap"
+  ],
+  "annotations": [
+    "Deprecated", "JvmField", "JvmName", "JvmStatic", "Suppress", "Target", "Retention", "Repeatable",
+    "Serializable", "Parcelize", "Composable", "Preview"
+  ]
+}

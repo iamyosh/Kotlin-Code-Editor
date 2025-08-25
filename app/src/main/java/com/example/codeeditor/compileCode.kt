@@ -25,24 +25,21 @@ fun compileCode(
         internalFile.copyTo(externalFile, overwrite = true)
     }
 
-    // 2. Show instructions via onResult
-    val instructions = "Kotlin file saved at $externalFile "
+    // 2. Generate instructions for the user to compile on their PC via ADB
+    val adbPushCommand = "adb push \"${externalFile.absolutePath}\" /sdcard/"
+    val compileCommand = "kotlin-compiler /sdcard/$fileName"
 
-//          On your PC, do the following manually:
+    val instructions = """
+Kotlin file saved to: ${externalFile.absolutePath}
 
-//        1. Push the file to the device:
-//            adb shell
-//            cd  $externalFile
-//            ls
-//            exit
-
-//        2. Push the file to the device:
-//           adb pull $externalFile C:/Users/Dilana/Desktop/dilana.kt
-//        3. Compile it using your script:
-//           ./compile_kotlin.sh /sdcard/$fileName
-
-
-
+To compile on your desktop machine:
+1. Open a terminal on your desktop.
+2. Push the file to your Android device (if not already there):
+   $adbPushCommand
+3. Compile it using your Kotlin compiler (adjust command if necessary):
+   $compileCommand
+4. Copy the output from your desktop compiler and paste it into the 'Compiler Output' field below.
+""".trimIndent()
 
     onResult(instructions)
 }

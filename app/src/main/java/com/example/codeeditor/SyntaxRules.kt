@@ -7,7 +7,11 @@ import kotlinx.serialization.json.Json
 data class SyntaxRules(
     val keywords: List<String>,
     val comments: List<String>,
-    val strings: List<String>
+    val strings: List<String>,
+    val numbers: List<String> = emptyList(),
+    val operators: List<String> = emptyList(),
+    val types: List<String> = emptyList(),
+    val annotations: List<String> = emptyList()
 )
 
 fun loadSyntaxRules(context: Context, filename: String): SyntaxRules {

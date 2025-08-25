@@ -12,32 +12,36 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = BlackPrimary,
+    onPrimary = WhiteText,
+    secondary = DarkPinkAccent,
+    onSecondary = WhiteText,
+    tertiary = LightPinkAccent,
+    onTertiary = WhiteText,
+    background = BlackPrimary,
+    onBackground = WhiteText,
+    surface = GreyBackground,
+    onSurface = WhiteText
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = BlackPrimary,
+    onPrimary = WhiteText,
+    secondary = DarkPinkAccent,
+    onSecondary = WhiteText,
+    tertiary = LightPinkAccent,
+    onTertiary = WhiteText,
+    background = BlackPrimary,
+    onBackground = WhiteText,
+    surface = GreyBackground,
+    onSurface = WhiteText
 )
 
 @Composable
 fun CodeEditorTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true, // Force dark theme
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Disable dynamic color to enforce our theme
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -47,7 +51,7 @@ fun CodeEditorTheme(
         }
 
         darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        else -> DarkColorScheme // Use DarkColorScheme for light theme as well to maintain consistent dark theme
     }
 
     MaterialTheme(

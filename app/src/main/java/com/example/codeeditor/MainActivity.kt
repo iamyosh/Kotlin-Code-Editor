@@ -36,6 +36,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.res.colorResource
+import com.example.codeeditor.getDOT_ALL
+
+
+private fun Unit.getDOT_ALL(): Any {
+    return TODO("Provide the return value")
+}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,7 +60,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val clipboardManager = LocalClipboardManager.current
-            val syntaxRules = loadSyntaxRules(this, "python.json")
+            var syntaxRules by remember { mutableStateOf(loadSyntaxRules(this, getSyntaxRulesFileName(currentFileName))) }
             var showMiniToolbar by remember { mutableStateOf(false) }
             var showFindReplace by remember { mutableStateOf(false) }
             var showCompilerInterface by remember { mutableStateOf(false) }
@@ -73,6 +79,10 @@ class MainActivity : ComponentActivity() {
                     }
             }
 
+            LaunchedEffect(currentFileName) {
+                syntaxRules = loadSyntaxRules(context, getSyntaxRulesFileName(currentFileName))
+            }
+
             fileManager = FileManager(context)
 
             CodeEditorTheme {
@@ -82,6 +92,7 @@ class MainActivity : ComponentActivity() {
                         DrawerContent(
                             initialFileName = currentFileName,
                             context = this,
+                            fileManager = fileManager,
                             onNewFile = { createNewFile(it) },
                             onOpenFile = { openFile(it) },
                             onSaveFile = { saveFile(it) }
@@ -129,6 +140,9 @@ class MainActivity : ComponentActivity() {
                             BottomAppBar(
                                 containerColor = colorResource(id = R.color.primary_variant),
                                 actions = {
+                                    Text("Chars: ${editorState.charCount.value}", color = colorResource(id = R.color.text_primary), modifier = Modifier.padding(horizontal = 8.dp))
+                                    Text("Words: ${editorState.wordCount.value}", color = colorResource(id = R.color.text_primary), modifier = Modifier.padding(horizontal = 8.dp))
+
                                     IconButton(onClick = { editorState.undo() }) {
                                         Icon(
                                             painter = painterResource(id = R.drawable.undo),
@@ -177,7 +191,7 @@ class MainActivity : ComponentActivity() {
                             if (showCompilerInterface) {
                                 CompilerInterface(
                                     clipboardManager,
-                                    compileOutput,
+                                    compileOutput, // Pass the compileOutput (which now contains instructions)
                                     onClose = { showCompilerInterface = false }
                                 )
                             }
@@ -222,6 +236,15 @@ class MainActivity : ComponentActivity() {
         val content = fileManager.openFile(filename)
         editorState.textField.value = TextFieldValue(content)
         currentFileName = filename
+    }
+
+    private fun getSyntaxRulesFileName(fileName: String): String {
+        return when (fileName.substringAfterLast('.')) {
+            "kt" -> "kotlin.json"
+            "java" -> "java.json"
+            "py" -> "python.json"
+            else -> "kotlin.json" // Default to Kotlin for unknown extensions
+        }
     }
 }
 
@@ -313,6 +336,9 @@ fun highlightSyntax(text: String, rules: SyntaxRules): AnnotatedString {
     val commentColor = colorResource(id = R.color.syntax_comment)
     val stringColor = colorResource(id = R.color.syntax_string)
     val numberColor = colorResource(id = R.color.syntax_number)
+    val operatorColor = colorResource(id = R.color.syntax_keyword) // Using keyword color for operators for now
+    val typeColor = colorResource(id = R.color.syntax_string) // Using string color for types for now
+    val annotationColor = colorResource(id = R.color.LightPinkAccent) // Custom color for annotations
 
     return buildAnnotatedString {
         append(text)
@@ -330,17 +356,28 @@ fun highlightSyntax(text: String, rules: SyntaxRules): AnnotatedString {
 
         // Comments
         rules.comments.forEach { comment ->
-            Regex("${Regex.escape(comment)}.*", RegexOption.MULTILINE).findAll(text).forEach { match ->
-                addStyle(
-                    SpanStyle(color = commentColor),
-                    match.range.first,
-                    match.range.last + 1
-                )
+            if (comment == "//") {
+                Regex("//.*", RegexOption.MULTILINE).findAll(text).forEach { match ->
+                    addStyle(
+                        SpanStyle(color = commentColor),
+                        match.range.first,
+                        match.range.last + 1
+                    )
+                }
+            } else if (comment == "/*") {
+                Regex("/\\*.*?\\*/", setOf(RegexOption.MULTILINE, RegexOption.DOT_MATCHES_ALL))
+                    .findAll(text).forEach { match ->
+                    addStyle(
+                        SpanStyle(color = commentColor),
+                        match.range.first,
+                        match.range.last + 1
+                    )
+                }
             }
         }
 
         // Strings
-        val stringRegex = Regex("\".*?\"|'.*?'", RegexOption.MULTILINE)
+        val stringRegex = Regex("(\"\".*?\"\")|('.*?')", RegexOption.MULTILINE)
         stringRegex.findAll(text).forEach { match ->
             addStyle(
                 SpanStyle(color = stringColor),
@@ -350,13 +387,48 @@ fun highlightSyntax(text: String, rules: SyntaxRules): AnnotatedString {
         }
 
         // Numbers
-        val numberRegex = "\\b\\d+\\b".toRegex()
+        val numberRegex = "\\b\\d+(\\.\\d+)?(f|F|l|L)?\\b".toRegex()
         numberRegex.findAll(text).forEach { match ->
             addStyle(
                 SpanStyle(color = numberColor),
                 match.range.first,
                 match.range.last + 1
             )
+        }
+
+        // Operators
+        rules.operators.forEach { operator ->
+            Regex("${Regex.escape(operator)}")
+                .findAll(text)
+                .forEach { match ->
+                addStyle(
+                    SpanStyle(color = operatorColor),
+                    match.range.first,
+                    match.range.last + 1
+                )
+            }
+        }
+
+        // Types (simple regex for now, can be improved)
+        rules.types.forEach { type ->
+            "\\b$type\\b".toRegex().findAll(text).forEach { match ->
+                addStyle(
+                    SpanStyle(color = typeColor),
+                    match.range.first,
+                    match.range.last + 1
+                )
+            }
+        }
+
+        // Annotations
+        rules.annotations.forEach { annotation ->
+            Regex("@${Regex.escape(annotation)}\\b").findAll(text).forEach { match ->
+                addStyle(
+                    SpanStyle(color = annotationColor),
+                    match.range.first,
+                    match.range.last + 1
+                )
+            }
         }
     }
 }

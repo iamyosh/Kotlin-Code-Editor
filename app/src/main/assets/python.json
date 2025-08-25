@@ -1,5 +1,32 @@
 {
-  "keywords": ["def", "class", "if", "else", "return", "import", "for", "while"],
-  "comments": ["#"],
-  "strings": ["\"", "'"]
+  "keywords": [
+    "False", "None", "True", "and", "as", "assert", "async", "await", "break", "class",
+    "continue", """def""", "del", "elif", "else", "except", "finally", "for", "from",
+    "global", "if", "import", "in", "is", "lambda", "nonlocal", "not", "or", "pass",
+    "raise", "return", "try", "while", "with", "yield"
+  ],
+  "comments": [
+    "#",
+    """"
+  ],
+  "strings": [
+    "'",
+    """
+  ],
+  "numbers": [
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+    "0b", "0o", "0x", "0B", "0O", "0X", "j", "J"
+  ],
+  "operators": [
+    "+", "-", "*", "**", "/", "//", "%", "@",
+    "<<", ">>", "&", "|", "^", "~",
+    "<", ">", "<=", ">=", "==", "!=",
+    "=", "+=", "-=", "*=", "/=", "%="
+  ],
+  "types": [
+    "int", "float", "str", "bool", "list", "tuple", "dict", "set", "object", "NoneType"
+  ],
+  "annotations": [
+    "classmethod", "staticmethod", "property", "abstractmethod", "dataclass"
+  ]
 }
